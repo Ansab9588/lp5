@@ -1,42 +1,37 @@
 #include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
 #include <omp.h>
-
 using namespace std;
+using namespace std::chrono;
 
-// Node structure for the binary tree
-struct Node {
-    int data;
-    Node* left;
-    Node* right;
+class Node{
+    public:
+    int key;
+    Node *left;
+    Node *right;
 
-    Node(int value) : data(value), left(nullptr), right(nullptr) {}
+    Node(int k){
+
+        key = k;
+        left=right=NULL;
+    }
 };
 
-// Function to create a new node
-Node* createNode(int value) {
-    return new Node(value);
-}
 
-// Function to insert a new node into the binary tree
-void insertNode(Node*& root, int value) {
-    if (root == nullptr) {
-        root = createNode(value);
-        return;
-    }
 
-    // Insert on left or right based on some condition (example: odd or even value)
-    if (value % 2 == 0)
-        insertNode(root->left, value);
-    else
-        insertNode(root->right, value);
-}
+
 
 // Parallel DFS on a binary tree
 void parallelDFS(Node* node) {
+
+    
+
     if (node == nullptr)
         return;
 
-    cout << node->data << " ";
+    std::cout << node->key << " ";
 
     #pragma omp parallel sections
     {
@@ -50,20 +45,27 @@ void parallelDFS(Node* node) {
             parallelDFS(node->right);
         }
     }
+
+    
 }
 
-int main() {
-    Node* root = createNode(1);
-    insertNode(root, 2);
-    insertNode(root, 3);
-    insertNode(root, 4);
-    insertNode(root, 5);
-    insertNode(root->left, 6);
-    insertNode(root->left, 7);
 
-    cout << "Parallel DFS traversal: ";
+
+int main() {
+
+    Node *root = new Node(10);
+    root->left = new Node(20);
+    root->right = new Node(30);
+    root->left->left = new Node(40);
+    root->left->right = new Node(50);
+
+    std::cout << "Parallel DFS traversal: ";
+    auto start = high_resolution_clock::now();
     parallelDFS(root);
-    cout << endl;
+    std::cout << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Parallel DFS Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
 
     return 0;
 }
