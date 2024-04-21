@@ -1,94 +1,65 @@
 #include <iostream>
-#include <queue>
+#include <vector>
+#include <chrono>
+#include <iomanip>
 #include <omp.h>
-
 using namespace std;
+using namespace std::chrono;
 
-// Node structure for the binary tree
-struct Node {
-    int data;
-    Node* left;
-    Node* right;
+class Node{
+    public:
+    int key;
+    Node *left;
+    Node *right;
 
-    Node(int value) : data(value), left(nullptr), right(nullptr) {}
+    Node(int k){
+
+        key = k;
+        left=right=NULL;
+    }
 };
 
-// Function to create a new node
-Node* createNode(int value) {
-    return new Node(value);
-}
 
-// Function to insert a new node into the binary tree
-void insertNode(Node*& root, int value) {
-    if (root == nullptr) {
-        root = createNode(value);
-        return;
-    }
 
-    queue<Node*> q;
-    q.push(root);
+// Parallel DFS on a binary tree
+void parallelDFS(Node* node) {
 
-    while (!q.empty()) {
-        Node* temp = q.front();
-        q.pop();
 
-        if (temp->left == nullptr) {
-            temp->left = createNode(value);
-            return;
-        } else {
-            q.push(temp->left);
-        }
-
-        if (temp->right == nullptr) {
-            temp->right = createNode(value);
-            return;
-        } else {
-            q.push(temp->right);
-        }
-    }
-}
-
-// Parallel BFS on a binary tree
-void parallelBFS(Node* root) {
-    if (root == nullptr)
+    if (node == nullptr)
         return;
 
-    queue<Node*> q;
-    q.push(root);
+    std::cout << node->key << " ";
 
-    while (!q.empty()) {
-        #pragma omp parallel
+    #pragma omp parallel sections
+    {
+        #pragma omp section
         {
-            #pragma omp single nowait
-            {
-                while (!q.empty()) {
-                    Node* current = q.front();
-                    q.pop();
-                    cout << current->data << " ";
+            parallelDFS(node->left);
+        }
 
-                    if (current->left != nullptr)
-                        q.push(current->left);
-
-                    if (current->right != nullptr)
-                        q.push(current->right);
-                }
-            }
+        #pragma omp section
+        {
+            parallelDFS(node->right);
         }
     }
 }
+
 
 int main() {
-    Node* root = createNode(1);
-    insertNode(root, 2);
-    insertNode(root, 3);
-    insertNode(root, 4);
-    insertNode(root, 5);
-    insertNode(root->left, 6);
-    insertNode(root->left, 7);
 
-    cout << "Parallel BFS traversal: ";
-    parallelBFS(root);
-    cout << endl;
+    Node *root = new Node(10);
+    root->left = new Node(20);
+    root->right = new Node(30);
+    root->left->left = new Node(40);
+    root->left->right = new Node(50);
+
+    std::cout << "Parallel BFS traversal: ";
+    auto start = high_resolution_clock::now();
+    parallelDFS(root);
+    std::cout << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Parallel BFS Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
 
     return 0;
 }
