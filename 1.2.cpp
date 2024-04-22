@@ -20,9 +20,6 @@ class Node{
 };
 
 
-
-
-
 // Parallel DFS on a binary tree
 void parallelDFS(Node* node) {
 
