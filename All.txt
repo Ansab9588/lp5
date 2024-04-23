@@ -1,0 +1,1677 @@
+// BFS
+
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <omp.h>
+#include <bits/stdc++.h>
+using namespace std;
+using namespace std::chrono;
+
+class Node{
+    public:
+    int key;
+    Node *left;
+    Node *right;
+
+    Node(int k){
+
+        key = k;
+        left=right=NULL;
+    }
+};
+
+
+
+// Parallel BFS on a binary tree
+void parallelBFS(Node* root) {
+    if (root == nullptr)
+        return;
+
+    queue<Node*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        #pragma omp parallel
+        {
+            #pragma omp single nowait
+            {
+                while (!q.empty()) {
+                    Node* current = q.front();
+                    q.pop();
+                    cout << current->key << " ";
+
+                    if (current->left != nullptr)
+                        q.push(current->left);
+
+                    if (current->right != nullptr)
+                        q.push(current->right);
+                }
+            }
+        }
+    }
+} 
+
+
+
+
+
+
+int main() {
+
+    Node *root = new Node(10);
+    root->left = new Node(20);
+    root->right = new Node(30);
+    root->left->left = new Node(40);
+    root->left->right = new Node(50);
+
+    cout << "Parallel BFS traversal: ";
+    auto start = high_resolution_clock::now();
+    parallelBFS(root);
+    cout << endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Parallel BFS Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
+
+    return 0;
+}
+
+
+
+// g++ -fopenmp example.cpp -o example
+// // ./example
+
+// #include <iostream>
+// #include <vector>
+// #include <queue>
+// #include <stack>
+// #include <omp.h>
+
+// using namespace std;
+
+// // Define a structure for an undirected graph
+// class Graph {
+//     int V; // Number of vertices
+//     vector<vector<int>> adj; // Adjacency list
+
+// public:
+//     // Constructor to initialize the graph with a given number of vertices
+//     Graph(int V) : V(V) {
+//         adj.resize(V);
+//     }
+
+//     // Function to add an edge between two vertices
+//     void addEdge(int u, int v) {
+//         adj[u].push_back(v);
+//         adj[v].push_back(u); // Since the graph is undirected
+//     }
+
+//     // Breadth First Search
+//     void parallelBFS(int start) {
+//         vector<bool> visited(V, false); // Keep track of visited vertices
+//         queue<int> q; // Queue for BFS traversal
+//         q.push(start); // Enqueue the starting vertex
+//         visited[start] = true; // Mark the starting vertex as visited
+
+//         // Perform BFS traversal
+//         while (!q.empty()) {
+//             int size = q.size(); // Get the current size of the queue
+//             #pragma omp parallel for
+//             for (int i = 0; i < size; ++i) {
+//                 int u;
+//                 #pragma omp critical
+//                 {
+//                     u = q.front(); // Get the front element of the queue
+//                     q.pop(); // Dequeue the front element
+//                 }
+//                 cout << u << " "; // Print the current vertex
+//                 // Traverse adjacent vertices of the current vertex
+//                 for (int v : adj[u]) {
+//                     if (!visited[v]) {
+//                         #pragma omp critical
+//                         {
+//                             visited[v] = true; // Mark the adjacent vertex as visited
+//                             q.push(v); // Enqueue the adjacent vertex
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     // Depth First Search
+//     void parallelDFS(int start) {
+//         vector<bool> visited(V, false); // Keep track of visited vertices
+//         stack<int> s; // Stack for DFS traversal
+//         s.push(start); // Push the starting vertex onto the stack
+
+//         // Perform DFS traversal
+//         #pragma omp parallel
+//         {
+//             while (!s.empty()) {
+//                 int u = -1; // Initialize u to an invalid value
+//                 #pragma omp critical
+//                 {
+//                     if (!s.empty()) {
+//                         u = s.top(); // Get the top element of the stack
+//                         s.pop(); // Pop the top element
+//                     }
+//                 }
+//                 if (u != -1 && !visited[u]) {
+//                     visited[u] = true; // Mark the current vertex as visited
+//                     cout << u << " "; // Print the current vertex
+//                     // Traverse adjacent vertices of the current vertex
+//                     for (int v : adj[u]) {
+//                         if (!visited[v]) {
+//                             #pragma omp critical
+//                             {
+//                                 s.push(v); // Push the adjacent vertex onto the stack
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// };
+
+// int main() {
+//     // Create a graph
+//     int V, E;
+//     cout << "Enter the number of vertices and edges: ";
+//     cin >> V >> E;
+
+//     Graph graph(V); // Instantiate a graph with V vertices
+
+//     // Input edges of the graph
+//     cout << "Enter the edges (format: source destination):" << endl;
+//     for (int i = 0; i < E; ++i) {
+//         int u, v;
+//         cin >> u >> v;
+//         graph.addEdge(u, v); // Add the edge between vertices u and v
+//     }
+
+//     // Perform BFS and DFS
+//     int startVertex;
+//     cout << "Enter the starting vertex for BFS and DFS: ";
+//     cin >> startVertex;
+
+//     cout << "BFS Traversal: ";
+//     graph.parallelBFS(startVertex); // Perform parallel BFS traversal
+//     cout << endl;
+
+//     cout << "DFS Traversal: ";
+//     graph.parallelDFS(startVertex); // Perform parallel DFS traversal
+//     cout << endl;
+
+//     return 0;
+// }
+
+// /*
+// Depth-First Search (DFS) is a fundamental algorithm used for traversing or searching tree or graph data structures. It starts at a chosen node (often referred to as the "root" in trees) and explores as far as possible along each branch before backtracking. Let's delve into the details of DFS:
+
+// ### Basic Idea:
+
+// 1. **Start at a Node**: The algorithm begins at a chosen starting node.
+
+// 2. **Explore as Far as Possible**: From the current node, DFS explores as far as possible along each branch before backtracking. It prioritizes going deep into the graph or tree rather than broad exploration.
+
+// 3. **Backtrack when Necessary**: If a dead end is reached or all neighboring nodes have been visited, DFS backtracks to the most recent node with unexplored neighbors and continues.
+
+// ### Pseudocode:
+
+// ```
+// DFS(G, v):
+//     // G: Graph, v: Current vertex
+    
+//     Mark v as visited
+    
+//     For each neighbor w of v in G:
+//         If w is not visited:
+//             DFS(G, w)
+// ```
+
+// ### Detailed Explanation:
+
+// 1. **Initialization**: Initialize a set to keep track of visited nodes and start DFS at a specified node.
+
+// 2. **Explore Neighbors**: For each neighbor of the current node, if the neighbor has not been visited, recursively apply DFS to that neighbor.
+
+// 3. **Mark Visited**: Mark the current node as visited to avoid revisiting it.
+
+// 4. **Backtracking**: If all neighbors have been visited or there are no neighbors, backtrack to the previous node.
+
+// 5. **Termination**: The process continues until all reachable nodes from the starting node have been visited.
+
+// ### Applications:
+
+// 1. **Graph Traversal**: DFS can be used to traverse a graph and visit all nodes reachable from a given starting node.
+
+// 2. **Cycle Detection**: By keeping track of visited nodes, DFS can detect cycles in a graph.
+
+// 3. **Pathfinding**: DFS can be adapted to find paths between nodes in a graph.
+
+// 4. **Topological Sorting**: DFS can be used to perform topological sorting of a directed acyclic graph (DAG).
+
+// ### Time Complexity:
+
+// The time complexity of DFS is \(O(V + E)\), where \(V\) is the number of vertices (nodes) and \(E\) is the number of edges in the graph. This is because DFS visits each vertex and edge at most once.
+
+// ### Space Complexity:
+
+// The space complexity of DFS depends on the implementation. In the recursive implementation, the maximum space required on the call stack is proportional to the maximum depth of recursion, which is \(O(V)\) in the worst case for a graph with \(V\) vertices. Additionally, a set to keep track of visited nodes requires \(O(V)\) space.
+
+// ### Summary:
+
+// Depth-First Search (DFS) is a versatile graph traversal algorithm that systematically explores the vertices and edges of a graph or tree. Its simplicity and effectiveness make it a widely used tool in various applications, including graph traversal, cycle detection, pathfinding, and topological sorting.
+
+
+// Certainly! Let's dive into the details of Breadth-First Search (BFS), another fundamental graph traversal algorithm:
+
+// ### Basic Idea:
+
+// Breadth-First Search (BFS) explores a graph by systematically traversing all nodes at the current depth level before moving to the nodes at the next depth level. It starts at a chosen node (often referred to as the "root" in trees) and explores all its neighbors before moving to the next level of neighbors.
+
+// ### Pseudocode:
+
+// ```
+// BFS(G, s):
+//     // G: Graph, s: Starting node
+    
+//     Initialize a queue Q
+//     Mark node s as visited and enqueue it into Q
+    
+//     While Q is not empty:
+//         Dequeue a node v from Q
+//         For each neighbor w of v in G:
+//             If w is not visited:
+//                 Mark w as visited and enqueue it into Q
+// ```
+
+// ### Detailed Explanation:
+
+// 1. **Initialization**: Initialize a queue to keep track of nodes to be visited and mark the starting node as visited.
+
+// 2. **Enqueue Starting Node**: Enqueue the starting node into the queue.
+
+// 3. **Exploration Loop**: While the queue is not empty, dequeue a node from the front of the queue and explore its neighbors.
+
+// 4. **Mark Visited**: Mark each unvisited neighbor as visited and enqueue it into the queue.
+
+// 5. **Termination**: The process continues until the queue is empty, indicating that all reachable nodes from the starting node have been visited.
+
+// ### Applications:
+
+// 1. **Graph Traversal**: BFS can be used to traverse a graph and visit all nodes reachable from a given starting node.
+
+// 2. **Shortest Path Finding**: BFS can find the shortest path between two nodes in an unweighted graph.
+
+// 3. **Connected Components**: BFS can determine the connected components of a graph.
+
+// 4. **Maze Solving**: BFS can be used to solve maze problems by finding the shortest path from the starting position to the goal.
+
+// ### Time Complexity:
+
+// The time complexity of BFS is \(O(V + E)\), where \(V\) is the number of vertices (nodes) and \(E\) is the number of edges in the graph. This is because BFS visits each vertex and edge exactly once.
+
+// ### Space Complexity:
+
+// The space complexity of BFS depends on the implementation. In the worst case, the space required is proportional to the maximum number of nodes at a single level in the graph, which can be \(O(V)\) in the case of a complete binary tree. Additionally, a queue is used to store nodes to be visited, requiring \(O(V)\) space.
+
+// ### Summary:
+
+// Breadth-First Search (BFS) is a graph traversal algorithm that explores a graph level by level, visiting all nodes at each level before moving to the next level. Its simplicity and ability to find shortest paths in unweighted graphs make it a widely used algorithm in various applications, including graph traversal, shortest path finding, connected component determination, and maze solving.
+
+
+// Parallel Breadth-First Search (BFS) and Parallel Depth-First Search (DFS) are parallelized versions of the traditional BFS and DFS algorithms, respectively, designed to exploit parallelism on multi-core or distributed memory systems. Let's compare them:
+
+// ### Parallel BFS:
+
+// 1. **Exploration Strategy**:
+//    - BFS explores the graph level by level, visiting all nodes at each level before moving to the next level.
+//    - Parallel BFS maintains multiple frontier sets, each corresponding to a level in the graph. Multiple threads simultaneously explore nodes at different levels in parallel.
+
+// 2. **Parallelism**:
+//    - BFS inherently exhibits fine-grained parallelism, as nodes at each level can be explored independently.
+//    - Parallel BFS can efficiently utilize multi-core processors, with each core responsible for processing a different level of the graph.
+
+// 3. **Communication**:
+//    - In parallel BFS, communication between threads is minimal, as threads typically operate independently on different levels of the graph.
+//    - However, synchronization may be required to coordinate access to shared data structures, such as the frontier queue.
+
+// 4. **Applications**:
+//    - Parallel BFS is commonly used in graph algorithms requiring level-wise traversal, such as shortest path finding, connected components, and network analysis.
+
+// ### Parallel DFS:
+
+// 1. **Exploration Strategy**:
+//    - DFS explores the graph depth-first, traversing as far as possible along each branch before backtracking.
+//    - Parallel DFS divides the search space into subproblems, with different threads exploring different branches of the search tree concurrently.
+
+// 2. **Parallelism**:
+//    - DFS exhibits coarse-grained parallelism, as each thread typically explores a different subtree independently.
+//    - Parallel DFS may be less efficient than parallel BFS on multi-core processors due to potential load imbalances and thread contention.
+
+// 3. **Communication**:
+//    - Parallel DFS may require more communication between threads, especially if load balancing techniques or work stealing are employed to distribute work among threads.
+
+// 4. **Applications**:
+//    - Parallel DFS can be useful in applications where depth-first exploration is preferred, such as graph traversal with specific search criteria or constraint satisfaction problems.
+
+// ### Comparison:
+
+// 1. **Parallelism Type**:
+//    - BFS exhibits fine-grained parallelism, while DFS typically exhibits coarse-grained parallelism.
+   
+// 2. **Load Balancing**:
+//    - Load balancing is typically easier to achieve in parallel BFS, as nodes at each level can be evenly distributed among threads.
+//    - Load balancing may be more challenging in parallel DFS, especially if the search tree is unevenly partitioned among threads.
+
+// 3. **Memory Usage**:
+//    - Parallel BFS may require more memory to store multiple frontier sets, one for each level.
+//    - Parallel DFS may have lower memory requirements as it typically operates on a single search path at a time.
+
+// 4. **Performance**:
+//    - The performance of parallel BFS and parallel DFS depends on factors such as graph structure, workload distribution, and synchronization overhead.
+//    - In general, parallel BFS may exhibit better scalability on multi-core processors due to its finer-grained parallelism.
+
+// ### Summary:
+
+// - Parallel BFS and parallel DFS are parallelized versions of traditional graph traversal algorithms designed to exploit parallelism on multi-core or distributed memory systems.
+// - Parallel BFS is well-suited for applications requiring level-wise traversal, while parallel DFS may be preferable for applications where depth-first exploration is more appropriate.
+// - The choice between parallel BFS and parallel DFS depends on factors such as algorithmic requirements, graph characteristics, and performance considerations.
+
+
+// OpenMP (Open Multi-Processing) is an API (Application Programming Interface) that supports multi-platform shared memory multiprocessing programming in C, C++, and Fortran. It enables developers to write parallel programs that can execute concurrently on multi-core processors and symmetric multiprocessing (SMP) systems.
+
+// ### Key Features:
+
+// 1. **Shared Memory Model**: OpenMP operates on a shared memory model, where multiple threads of execution share the same memory space. This simplifies parallel programming compared to distributed memory models like MPI (Message Passing Interface).
+
+// 2. **Directive-Based Programming**: OpenMP uses compiler directives to parallelize code sections. These directives are pragmas (compiler hints) that instruct the compiler to generate parallel code. They are easy to add to existing serial code and can be selectively applied to parallelize specific regions of code.
+
+// 3. **Thread-Based Parallelism**: OpenMP creates threads to achieve parallel execution. The number of threads is typically determined at runtime, based on the available hardware resources (e.g., number of CPU cores).
+
+// 4. **Automatic Load Balancing**: OpenMP automatically handles load balancing by distributing work among threads. Each thread executes a portion of the parallel region, and the runtime system ensures that work is evenly distributed across threads.
+
+// 5. **Task Parallelism**: OpenMP supports task-based parallelism, allowing developers to express parallelism at a higher level of abstraction. Tasks are units of work that can be executed independently and asynchronously.
+
+// 6. **Data Sharing and Synchronization**: OpenMP provides mechanisms for sharing data among threads, including shared variables, private variables, and synchronization constructs like barriers, atomic operations, and critical sections.
+
+// ### Basic Usage:
+
+// 1. **Compiler Directives**: OpenMP directives are added to the code using pragma statements. For example:
+//     ```c
+//     #pragma omp parallel
+//     {
+//         // Parallel region
+//         printf("Hello, world!\n");
+//     }
+//     ```
+
+// 2. **Parallel Regions**: The `omp parallel` directive creates a team of threads, each executing the enclosed parallel region.
+
+// 3. **Work Sharing Constructs**: Directives like `omp for` and `omp sections` enable parallelization of loops and sections of code, respectively.
+
+// 4. **Data Scoping**: OpenMP provides different data scoping options, including shared, private, firstprivate, and threadprivate, to control how variables are accessed and shared among threads.
+
+// 5. **Synchronization**: Synchronization constructs like `omp barrier`, `omp critical`, `omp atomic`, and `omp flush` are used to coordinate access to shared resources and ensure correct program behavior.
+
+// ### Example:
+
+// Here's a simple example of parallelizing a loop using OpenMP in C:
+// ```c
+// #include <stdio.h>
+// #include <omp.h>
+
+// int main() {
+//     int n = 10;
+//     int sum = 0;
+
+//     #pragma omp parallel for reduction(+:sum)
+//     for (int i = 0; i < n; i++) {
+//         sum += i;
+//     }
+
+//     printf("Sum: %d\n", sum);
+
+//     return 0;
+// }
+// ```
+
+// ### Platforms and Implementations:
+
+// OpenMP is supported by most modern compilers, including GCC, Clang, Intel Compiler (icc), and Microsoft Visual C++. It is available on various operating systems, including Linux, Windows, and macOS. Additionally, OpenMP is supported by many parallel computing platforms, including supercomputers and cloud-based environments.
+
+// ### Summary:
+
+// OpenMP is a powerful and widely used API for shared memory parallel programming. It provides a simple and portable way to write parallel programs in C, C++, and Fortran, enabling developers to leverage multi-core processors and SMP systems for improved performance and scalability. With its directive-based approach and support for task parallelism, OpenMP simplifies the development of parallel applications while offering high-level control over parallel execution.
+
+
+// ### 1. `#pragma omp parallel`:
+
+// This directive creates a team of threads, each of which executes the enclosed parallel region. It is one of the fundamental directives in OpenMP for parallelism.
+
+// ```c
+// #pragma omp parallel
+// {
+//     // Parallel region
+//     printf("Hello, world!\n");
+// }
+// ```
+
+// In this example, multiple threads are created to execute the statements within the parallel region. Each thread executes the code independently, and the runtime system ensures proper thread management and synchronization.
+
+// ### 2. `#pragma omp parallel for`:
+
+// This directive combines the functionality of both `#pragma omp parallel` and a loop parallelization directive (`#pragma omp for`). It parallelizes the execution of a loop across multiple threads.
+
+// ```c
+// #include <omp.h>
+// #include <stdio.h>
+
+// int main() {
+//     int n = 100;
+//     int sum = 0;
+
+//     #pragma omp parallel for reduction(+:sum)
+//     for (int i = 0; i < n; i++) {
+//         sum += i;
+//     }
+
+//     printf("Sum: %d\n", sum);
+
+//     return 0;
+// }
+// ```
+
+// In this example, the loop is parallelized across multiple threads, with each thread executing a portion of the loop iterations. The `reduction` clause is used to ensure that the `sum` variable is properly updated without race conditions.
+
+// ### 3. `#pragma omp critical`:
+
+// This directive defines a critical section, which is a code segment that only one thread can execute at a time. It ensures that concurrent access to shared resources is properly synchronized to prevent data races and inconsistencies.
+
+// ```c
+// #include <omp.h>
+// #include <stdio.h>
+
+// int main() {
+//     int sharedVariable = 0;
+
+//     #pragma omp parallel
+//     {
+//         #pragma omp critical
+//         {
+//             sharedVariable++;
+//             printf("Thread %d incremented sharedVariable to %d\n", omp_get_thread_num(), sharedVariable);
+//         }
+//     }
+
+//     return 0;
+// }
+// ```
+
+// In this example, the `sharedVariable` is accessed and modified within a critical section to ensure that only one thread can modify it at a time. This prevents race conditions and ensures the correctness of the program's output.
+
+// ### Summary:
+
+// - `#pragma omp parallel`: Creates a team of threads to execute a parallel region.
+// - `#pragma omp parallel for`: Parallelizes the execution of a loop across multiple threads.
+// - `#pragma omp critical`: Defines a critical section where only one thread can execute at a time, ensuring proper synchronization for shared resources.
+// */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// DFS
+
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <omp.h>
+using namespace std;
+using namespace std::chrono;
+
+class Node{
+    public:
+    int key;
+    Node *left;
+    Node *right;
+
+    Node(int k){
+
+        key = k;
+        left=right=NULL;
+    }
+};
+
+
+// Parallel DFS on a binary tree
+void parallelDFS(Node* node) {
+
+    
+
+    if (node == nullptr)
+        return;
+
+    std::cout << node->key << " ";
+
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            parallelDFS(node->left);
+        }
+
+        #pragma omp section
+        {
+            parallelDFS(node->right);
+        }
+    }
+
+    
+}
+
+
+
+int main() {
+
+    Node *root = new Node(10);
+    root->left = new Node(20);
+    root->right = new Node(30);
+    root->left->left = new Node(40);
+    root->left->right = new Node(50);
+
+    std::cout << "Parallel DFS traversal: ";
+    auto start = high_resolution_clock::now();
+    parallelDFS(root);
+    std::cout << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Parallel DFS Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
+
+    return 0;
+}
+
+
+
+
+// g++ -fopenmp example.cpp -o example
+// // ./example
+
+// #include <iostream>
+// #include <vector>
+// #include <queue>
+// #include <stack>
+// #include <omp.h>
+
+// using namespace std;
+
+// // Define a Node structure for the tree
+// struct Node {
+//     int data;
+//     vector<Node*> children;
+
+//     Node(int val) : data(val) {}
+// };
+
+// // Breadth First Search
+// void parallelBFS(Node* root) {
+//     queue<Node*> q;
+//     q.push(root);
+
+//     while (!q.empty()) {
+//         int size = q.size(); // Get the current size of the queue
+
+//         // Create a temporary vector to store children
+//         vector<Node*> temp;
+
+//         #pragma omp parallel for shared(q, temp)
+//         for (int i = 0; i < size; ++i) {
+//             Node* current;
+//             #pragma omp critical
+//             {
+//                 current = q.front(); // Get the front element of the queue
+//                 q.pop(); // Dequeue the front element
+//             }
+//             cout << current->data << " "; // Print the current node data
+
+//             // Store children in the temporary vector
+//             for (Node* child : current->children) {
+//                 #pragma omp critical
+//                 temp.push_back(child);
+//             }
+//         }
+
+//         // Enqueue children after traversing the current level
+//         for (Node* child : temp) {
+//             q.push(child); // Enqueue the child node
+//         }
+//     }
+// }
+
+// // Depth First Search
+// void parallelDFS(Node* root) {
+//     stack<Node*> s;
+//     s.push(root);
+
+//     while (!s.empty()) {
+//         // Create a temporary vector to store children 
+//         vector<Node*> temp;
+
+//         // Process the current node
+//         Node* current;
+//         #pragma omp critical
+//         {
+//             current = s.top(); // Get the top element of the stack
+//             s.pop(); // Pop the top element
+//         }
+//         cout << current->data << " "; // Print the current node data
+
+//         // Store children in the temporary vector
+//         for (Node* child : current->children) {
+//             temp.push_back(child); // Store the child node in the temporary vector
+//         }
+
+//         // Push children onto the stack in reverse order
+//         for (int j = temp.size() - 1; j >= 0; --j) {
+//             Node* child = temp[j];
+//             #pragma omp critical
+//             s.push(child); // Push the child node onto the stack
+//         }
+//     }
+// }
+
+// int main() {
+//     // Creating a sample tree
+//     Node* root = new Node(1);
+//     root->children.push_back(new Node(2));
+//     root->children.push_back(new Node(3));
+//     root->children[0]->children.push_back(new Node(4));
+//     root->children[0]->children.push_back(new Node(5));
+//     root->children[1]->children.push_back(new Node(6));
+//     root->children[1]->children.push_back(new Node(7));
+//     root->children.push_back(new Node(20));
+//     root->children[1]->children.push_back(new Node(8));
+
+//     // Perform BFS and DFS on the tree
+//     cout << "BFS: ";
+//     parallelBFS(root); // Perform parallel BFS traversal
+//     cout << endl;
+
+//     cout << "DFS: ";
+//     parallelDFS(root); // Perform parallel DFS traversal
+//     cout << endl;
+
+//     return 0;
+// }
+
+// /*
+// Depth-First Search (DFS) is a fundamental algorithm used for traversing or searching tree or graph data structures. It starts at a chosen node (often referred to as the "root" in trees) and explores as far as possible along each branch before backtracking. Let's delve into the details of DFS:
+
+// ### Basic Idea:
+
+// 1. **Start at a Node**: The algorithm begins at a chosen starting node.
+
+// 2. **Explore as Far as Possible**: From the current node, DFS explores as far as possible along each branch before backtracking. It prioritizes going deep into the graph or tree rather than broad exploration.
+
+// 3. **Backtrack when Necessary**: If a dead end is reached or all neighboring nodes have been visited, DFS backtracks to the most recent node with unexplored neighbors and continues.
+
+// ### Pseudocode:
+
+// ```
+// DFS(G, v):
+//     // G: Graph, v: Current vertex
+    
+//     Mark v as visited
+    
+//     For each neighbor w of v in G:
+//         If w is not visited:
+//             DFS(G, w)
+// ```
+
+// ### Detailed Explanation:
+
+// 1. **Initialization**: Initialize a set to keep track of visited nodes and start DFS at a specified node.
+
+// 2. **Explore Neighbors**: For each neighbor of the current node, if the neighbor has not been visited, recursively apply DFS to that neighbor.
+
+// 3. **Mark Visited**: Mark the current node as visited to avoid revisiting it.
+
+// 4. **Backtracking**: If all neighbors have been visited or there are no neighbors, backtrack to the previous node.
+
+// 5. **Termination**: The process continues until all reachable nodes from the starting node have been visited.
+
+// ### Applications:
+
+// 1. **Graph Traversal**: DFS can be used to traverse a graph and visit all nodes reachable from a given starting node.
+
+// 2. **Cycle Detection**: By keeping track of visited nodes, DFS can detect cycles in a graph.
+
+// 3. **Pathfinding**: DFS can be adapted to find paths between nodes in a graph.
+
+// 4. **Topological Sorting**: DFS can be used to perform topological sorting of a directed acyclic graph (DAG).
+
+// ### Time Complexity:
+
+// The time complexity of DFS is \(O(V + E)\), where \(V\) is the number of vertices (nodes) and \(E\) is the number of edges in the graph. This is because DFS visits each vertex and edge at most once.
+
+// ### Space Complexity:
+
+// The space complexity of DFS depends on the implementation. In the recursive implementation, the maximum space required on the call stack is proportional to the maximum depth of recursion, which is \(O(V)\) in the worst case for a graph with \(V\) vertices. Additionally, a set to keep track of visited nodes requires \(O(V)\) space.
+
+// ### Summary:
+
+// Depth-First Search (DFS) is a versatile graph traversal algorithm that systematically explores the vertices and edges of a graph or tree. Its simplicity and effectiveness make it a widely used tool in various applications, including graph traversal, cycle detection, pathfinding, and topological sorting.
+
+
+// Certainly! Let's dive into the details of Breadth-First Search (BFS), another fundamental graph traversal algorithm:
+
+// ### Basic Idea:
+
+// Breadth-First Search (BFS) explores a graph by systematically traversing all nodes at the current depth level before moving to the nodes at the next depth level. It starts at a chosen node (often referred to as the "root" in trees) and explores all its neighbors before moving to the next level of neighbors.
+
+// ### Pseudocode:
+
+// ```
+// BFS(G, s):
+//     // G: Graph, s: Starting node
+    
+//     Initialize a queue Q
+//     Mark node s as visited and enqueue it into Q
+    
+//     While Q is not empty:
+//         Dequeue a node v from Q
+//         For each neighbor w of v in G:
+//             If w is not visited:
+//                 Mark w as visited and enqueue it into Q
+// ```
+
+// ### Detailed Explanation:
+
+// 1. **Initialization**: Initialize a queue to keep track of nodes to be visited and mark the starting node as visited.
+
+// 2. **Enqueue Starting Node**: Enqueue the starting node into the queue.
+
+// 3. **Exploration Loop**: While the queue is not empty, dequeue a node from the front of the queue and explore its neighbors.
+
+// 4. **Mark Visited**: Mark each unvisited neighbor as visited and enqueue it into the queue.
+
+// 5. **Termination**: The process continues until the queue is empty, indicating that all reachable nodes from the starting node have been visited.
+
+// ### Applications:
+
+// 1. **Graph Traversal**: BFS can be used to traverse a graph and visit all nodes reachable from a given starting node.
+
+// 2. **Shortest Path Finding**: BFS can find the shortest path between two nodes in an unweighted graph.
+
+// 3. **Connected Components**: BFS can determine the connected components of a graph.
+
+// 4. **Maze Solving**: BFS can be used to solve maze problems by finding the shortest path from the starting position to the goal.
+
+// ### Time Complexity:
+
+// The time complexity of BFS is \(O(V + E)\), where \(V\) is the number of vertices (nodes) and \(E\) is the number of edges in the graph. This is because BFS visits each vertex and edge exactly once.
+
+// ### Space Complexity:
+
+// The space complexity of BFS depends on the implementation. In the worst case, the space required is proportional to the maximum number of nodes at a single level in the graph, which can be \(O(V)\) in the case of a complete binary tree. Additionally, a queue is used to store nodes to be visited, requiring \(O(V)\) space.
+
+// ### Summary:
+
+// Breadth-First Search (BFS) is a graph traversal algorithm that explores a graph level by level, visiting all nodes at each level before moving to the next level. Its simplicity and ability to find shortest paths in unweighted graphs make it a widely used algorithm in various applications, including graph traversal, shortest path finding, connected component determination, and maze solving.
+
+
+// Parallel Breadth-First Search (BFS) and Parallel Depth-First Search (DFS) are parallelized versions of the traditional BFS and DFS algorithms, respectively, designed to exploit parallelism on multi-core or distributed memory systems. Let's compare them:
+
+// ### Parallel BFS:
+
+// 1. **Exploration Strategy**:
+//    - BFS explores the graph level by level, visiting all nodes at each level before moving to the next level.
+//    - Parallel BFS maintains multiple frontier sets, each corresponding to a level in the graph. Multiple threads simultaneously explore nodes at different levels in parallel.
+
+// 2. **Parallelism**:
+//    - BFS inherently exhibits fine-grained parallelism, as nodes at each level can be explored independently.
+//    - Parallel BFS can efficiently utilize multi-core processors, with each core responsible for processing a different level of the graph.
+
+// 3. **Communication**:
+//    - In parallel BFS, communication between threads is minimal, as threads typically operate independently on different levels of the graph.
+//    - However, synchronization may be required to coordinate access to shared data structures, such as the frontier queue.
+
+// 4. **Applications**:
+//    - Parallel BFS is commonly used in graph algorithms requiring level-wise traversal, such as shortest path finding, connected components, and network analysis.
+
+// ### Parallel DFS:
+
+// 1. **Exploration Strategy**:
+//    - DFS explores the graph depth-first, traversing as far as possible along each branch before backtracking.
+//    - Parallel DFS divides the search space into subproblems, with different threads exploring different branches of the search tree concurrently.
+
+// 2. **Parallelism**:
+//    - DFS exhibits coarse-grained parallelism, as each thread typically explores a different subtree independently.
+//    - Parallel DFS may be less efficient than parallel BFS on multi-core processors due to potential load imbalances and thread contention.
+
+// 3. **Communication**:
+//    - Parallel DFS may require more communication between threads, especially if load balancing techniques or work stealing are employed to distribute work among threads.
+
+// 4. **Applications**:
+//    - Parallel DFS can be useful in applications where depth-first exploration is preferred, such as graph traversal with specific search criteria or constraint satisfaction problems.
+
+// ### Comparison:
+
+// 1. **Parallelism Type**:
+//    - BFS exhibits fine-grained parallelism, while DFS typically exhibits coarse-grained parallelism.
+   
+// 2. **Load Balancing**:
+//    - Load balancing is typically easier to achieve in parallel BFS, as nodes at each level can be evenly distributed among threads.
+//    - Load balancing may be more challenging in parallel DFS, especially if the search tree is unevenly partitioned among threads.
+
+// 3. **Memory Usage**:
+//    - Parallel BFS may require more memory to store multiple frontier sets, one for each level.
+//    - Parallel DFS may have lower memory requirements as it typically operates on a single search path at a time.
+
+// 4. **Performance**:
+//    - The performance of parallel BFS and parallel DFS depends on factors such as graph structure, workload distribution, and synchronization overhead.
+//    - In general, parallel BFS may exhibit better scalability on multi-core processors due to its finer-grained parallelism.
+
+// ### Summary:
+
+// - Parallel BFS and parallel DFS are parallelized versions of traditional graph traversal algorithms designed to exploit parallelism on multi-core or distributed memory systems.
+// - Parallel BFS is well-suited for applications requiring level-wise traversal, while parallel DFS may be preferable for applications where depth-first exploration is more appropriate.
+// - The choice between parallel BFS and parallel DFS depends on factors such as algorithmic requirements, graph characteristics, and performance considerations.
+
+
+// OpenMP (Open Multi-Processing) is an API (Application Programming Interface) that supports multi-platform shared memory multiprocessing programming in C, C++, and Fortran. It enables developers to write parallel programs that can execute concurrently on multi-core processors and symmetric multiprocessing (SMP) systems.
+
+// ### Key Features:
+
+// 1. **Shared Memory Model**: OpenMP operates on a shared memory model, where multiple threads of execution share the same memory space. This simplifies parallel programming compared to distributed memory models like MPI (Message Passing Interface).
+
+// 2. **Directive-Based Programming**: OpenMP uses compiler directives to parallelize code sections. These directives are pragmas (compiler hints) that instruct the compiler to generate parallel code. They are easy to add to existing serial code and can be selectively applied to parallelize specific regions of code.
+
+// 3. **Thread-Based Parallelism**: OpenMP creates threads to achieve parallel execution. The number of threads is typically determined at runtime, based on the available hardware resources (e.g., number of CPU cores).
+
+// 4. **Automatic Load Balancing**: OpenMP automatically handles load balancing by distributing work among threads. Each thread executes a portion of the parallel region, and the runtime system ensures that work is evenly distributed across threads.
+
+// 5. **Task Parallelism**: OpenMP supports task-based parallelism, allowing developers to express parallelism at a higher level of abstraction. Tasks are units of work that can be executed independently and asynchronously.
+
+// 6. **Data Sharing and Synchronization**: OpenMP provides mechanisms for sharing data among threads, including shared variables, private variables, and synchronization constructs like barriers, atomic operations, and critical sections.
+
+// ### Basic Usage:
+
+// 1. **Compiler Directives**: OpenMP directives are added to the code using pragma statements. For example:
+//     ```c
+//     #pragma omp parallel
+//     {
+//         // Parallel region
+//         printf("Hello, world!\n");
+//     }
+//     ```
+
+// 2. **Parallel Regions**: The `omp parallel` directive creates a team of threads, each executing the enclosed parallel region.
+
+// 3. **Work Sharing Constructs**: Directives like `omp for` and `omp sections` enable parallelization of loops and sections of code, respectively.
+
+// 4. **Data Scoping**: OpenMP provides different data scoping options, including shared, private, firstprivate, and threadprivate, to control how variables are accessed and shared among threads.
+
+// 5. **Synchronization**: Synchronization constructs like `omp barrier`, `omp critical`, `omp atomic`, and `omp flush` are used to coordinate access to shared resources and ensure correct program behavior.
+
+// ### Example:
+
+// Here's a simple example of parallelizing a loop using OpenMP in C:
+// ```c
+// #include <stdio.h>
+// #include <omp.h>
+
+// int main() {
+//     int n = 10;
+//     int sum = 0;
+
+//     #pragma omp parallel for reduction(+:sum)
+//     for (int i = 0; i < n; i++) {
+//         sum += i;
+//     }
+
+//     printf("Sum: %d\n", sum);
+
+//     return 0;
+// }
+// ```
+
+// ### Platforms and Implementations:
+
+// OpenMP is supported by most modern compilers, including GCC, Clang, Intel Compiler (icc), and Microsoft Visual C++. It is available on various operating systems, including Linux, Windows, and macOS. Additionally, OpenMP is supported by many parallel computing platforms, including supercomputers and cloud-based environments.
+
+// ### Summary:
+
+// OpenMP is a powerful and widely used API for shared memory parallel programming. It provides a simple and portable way to write parallel programs in C, C++, and Fortran, enabling developers to leverage multi-core processors and SMP systems for improved performance and scalability. With its directive-based approach and support for task parallelism, OpenMP simplifies the development of parallel applications while offering high-level control over parallel execution.
+
+
+// ### 1. `#pragma omp parallel`:
+
+// This directive creates a team of threads, each of which executes the enclosed parallel region. It is one of the fundamental directives in OpenMP for parallelism.
+
+// ```c
+// #pragma omp parallel
+// {
+//     // Parallel region
+//     printf("Hello, world!\n");
+// }
+// ```
+
+// In this example, multiple threads are created to execute the statements within the parallel region. Each thread executes the code independently, and the runtime system ensures proper thread management and synchronization.
+
+// ### 2. `#pragma omp parallel for`:
+
+// This directive combines the functionality of both `#pragma omp parallel` and a loop parallelization directive (`#pragma omp for`). It parallelizes the execution of a loop across multiple threads.
+
+// ```c
+// #include <omp.h>
+// #include <stdio.h>
+
+// int main() {
+//     int n = 100;
+//     int sum = 0;
+
+//     #pragma omp parallel for reduction(+:sum)
+//     for (int i = 0; i < n; i++) {
+//         sum += i;
+//     }
+
+//     printf("Sum: %d\n", sum);
+
+//     return 0;
+// }
+// ```
+
+// In this example, the loop is parallelized across multiple threads, with each thread executing a portion of the loop iterations. The `reduction` clause is used to ensure that the `sum` variable is properly updated without race conditions.
+
+// ### 3. `#pragma omp critical`:
+
+// This directive defines a critical section, which is a code segment that only one thread can execute at a time. It ensures that concurrent access to shared resources is properly synchronized to prevent data races and inconsistencies.
+
+// ```c
+// #include <omp.h>
+// #include <stdio.h>
+
+// int main() {
+//     int sharedVariable = 0;
+
+//     #pragma omp parallel
+//     {
+//         #pragma omp critical
+//         {
+//             sharedVariable++;
+//             printf("Thread %d incremented sharedVariable to %d\n", omp_get_thread_num(), sharedVariable);
+//         }
+//     }
+
+//     return 0;
+// }
+// ```
+
+// In this example, the `sharedVariable` is accessed and modified within a critical section to ensure that only one thread can modify it at a time. This prevents race conditions and ensures the correctness of the program's output.
+
+// ### Summary:
+
+// - `#pragma omp parallel`: Creates a team of threads to execute a parallel region.
+// - `#pragma omp parallel for`: Parallelizes the execution of a loop across multiple threads.
+// - `#pragma omp critical`: Defines a critical section where only one thread can execute at a time, ensuring proper synchronization for shared resources.
+// */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Bubble Sort
+
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <omp.h>
+
+using namespace std;
+using namespace std::chrono;
+
+// Sequential Bubble Sort
+void sequentialBubbleSort(vector<int>& arr) {
+    int n = arr.size();
+    bool swapped;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < n - 1; ++i) {
+        swapped = false;
+        for (int j = 0; j < n - i - 1; ++j) {
+            if (arr[j] > arr[j + 1]) {
+                swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+        // If no two elements were swapped in the inner loop, then the array is sorted
+        if (!swapped)
+            break;
+    }
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Sequential Bubble Sort Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
+}
+
+// Parallel Bubble Sort
+void parallelBubbleSort(vector<int>& arr) {
+    int n = arr.size();
+    bool swapped;
+
+    auto start = high_resolution_clock::now();
+
+    for (int i = 0; i < n - 1; ++i) {
+        swapped = false;
+        #pragma omp parallel for shared(arr, swapped)
+        for (int j = 0; j < n - i - 1; ++j) {
+            if (arr[j] > arr[j + 1]) {
+                swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+        // If no two elements were swapped in the inner loop, then the array is sorted
+        if (!swapped)
+            break;
+    }
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
+    cout << "Parallel Bubble Sort Execution Time: " << fixed << setprecision(10) << duration << " seconds" << endl;
+}
+
+int main() {
+    vector<int> arr = {64, 25, 12, 22, 11};
+
+    cout << "Original array: ";
+    for (int x : arr) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    // Sequential Bubble Sort
+    vector<int> arrSequential = arr;
+    sequentialBubbleSort(arrSequential);
+
+    // Parallel Bubble Sort
+    vector<int> arrParallel = arr;
+    parallelBubbleSort(arrParallel);
+
+    cout << "Sequential Sorted array: ";
+    for (int x : arrSequential) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    cout << "Parallel Sorted array: ";
+    for (int x : arrParallel) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Merge Sort
+
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <omp.h>
+
+using namespace std;
+using namespace std::chrono;
+
+// Sequential Merge Sort
+void merge(vector<int>& arr, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    vector<int> L(n1), R(n2);
+
+    for (int i = 0; i < n1; ++i)
+        L[i] = arr[left + i];
+    for (int j = 0; j < n2; ++j)
+        R[j] = arr[mid + 1 + j];
+
+    int i = 0, j = 0, k = left;
+
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j])
+            arr[k++] = L[i++];
+        else
+            arr[k++] = R[j++];
+    }
+
+    while (i < n1)
+        arr[k++] = L[i++];
+    while (j < n2)
+        arr[k++] = R[j++];
+}  
+
+void sequentialMergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right)
+        return;
+
+    int mid = left + (right - left) / 2;
+
+    sequentialMergeSort(arr, left, mid);
+    sequentialMergeSort(arr, mid + 1, right);
+
+    merge(arr, left, mid, right);
+}
+
+// Parallel Merge Sort
+void parallelMergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right)
+        return;
+
+    int mid = left + (right - left) / 2;
+
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            parallelMergeSort(arr, left, mid);
+        }
+
+        #pragma omp section
+        {
+            parallelMergeSort(arr, mid + 1, right);
+        }
+    }
+
+    merge(arr, left, mid, right);
+}
+
+int main() {
+    vector<int> arr = {64, 25, 12, 22, 11};
+
+    cout << "Original array: ";
+    for (int x : arr) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    // Sequential Merge Sort
+    vector<int> arrSequential = arr;
+    auto startSeq = high_resolution_clock::now();
+    sequentialMergeSort(arrSequential, 0, arr.size() - 1);
+    auto stopSeq = high_resolution_clock::now();
+    auto durationSeq = duration_cast<nanoseconds>(stopSeq - startSeq).count() / 1e9;
+    cout << "Sequential Merge Sort Execution Time: " << fixed << setprecision(10) << durationSeq << " seconds" << endl;
+
+    // Parallel Merge Sort
+    vector<int> arrParallel = arr;
+    auto startPar = high_resolution_clock::now();
+    parallelMergeSort(arrParallel, 0, arr.size() - 1);
+    auto stopPar = high_resolution_clock::now();
+    auto durationPar = duration_cast<nanoseconds>(stopPar - startPar).count() / 1e9;
+    cout << "Parallel Merge Sort Execution Time: " << fixed << setprecision(10) << durationPar << " seconds" << endl;
+
+    cout << "Sequential Sorted array: ";
+    for (int x : arrSequential) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    cout << "Parallel Sorted array: ";
+    for (int x : arrParallel) {
+        cout << x << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Min, Max, Avg
+
+// #include <iostream>
+// #include <vector>
+// #include <omp.h>
+// #include <climits>
+#include <bits/stdc++.h>
+using namespace std;
+
+
+void min_reduction(int arr[], int n)
+{
+    int min_value = INT_MAX;
+    #pragma omp parallel for reduction(min : min_value)
+    for (int i = 0; i < n; i++)
+    {
+        if (arr[i] < min_value)
+        {
+            min_value = arr[i];
+        }
+    }
+    cout << "Minimum value: " << min_value << endl;
+}
+
+
+void max_reduction(int arr[], int n)
+{
+    int max_value = INT_MIN;
+#pragma omp parallel for reduction(max : max_value)
+    for (int i = 0; i < n; i++)
+    {
+        if (arr[i] > max_value)
+        {
+            max_value = arr[i];
+        }
+    }
+    cout << "Maximum value: " << max_value << endl;
+}
+
+
+void sum_reduction(int arr[], int n)
+{
+    int sum = 0;
+#pragma omp parallel for reduction(+ : sum)
+    for (int i = 0; i < n; i++)
+    {
+        sum += arr[i];
+    }
+    cout << "Sum: " << sum << endl;
+}
+
+
+void average_reduction(int arr[], int n)
+{
+    int sum = 0;
+#pragma omp parallel for reduction(+ : sum)
+    for (int i = 0; i < n; i++)
+    {
+        sum += arr[i];
+    }
+    cout << "Average: " << (double)sum / (n - 1) << endl;
+}
+
+
+int main()
+{
+    int *arr, n;
+    cout << "\n enter total no of elements=>";
+    cin >> n;
+    arr = new int[n];
+
+    cout << "\n enter elements=>";
+
+    for (int i = 0; i < n; i++)
+    {
+        cin >> arr[i];
+    }
+    // int arr[] = {5, 2, 9, 1, 7, 6, 8, 3, 4};
+    // int n = size(arr);
+    min_reduction(arr, n);
+    max_reduction(arr, n);
+    sum_reduction(arr, n);
+    average_reduction(arr, n);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Boston
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+
+
+data = pd.read_csv("/content/BostonHousing.csv")
+data
+
+
+# Split features (X) and target (y)
+X = data.drop('medv', axis=1)
+Y = data['medv']
+
+
+# Normalize the features
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
+
+# Build the neural network model
+model = Sequential([
+    Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+    Dropout(0.2),
+    Dense(32, activation='relu'),
+    Dense(1)  # Output layer with one neuron (for regression)
+])
+
+
+# Compile the model
+model.compile(optimizer=Adam(learning_rate=0.001), loss='mean_squared_error')
+
+
+# Train the model
+model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=1)
+
+
+# Evaluate the model on test data
+loss = model.evaluate(X_test, y_test, verbose=0)
+print("Test Loss:", loss)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# IMDB
+
+import numpy as np
+from keras.datasets import imdb
+from keras.models import Sequential
+from keras.layers import Dense, LSTM, Embedding, SpatialDropout1D
+from keras.preprocessing.sequence import pad_sequences
+
+
+# Load the IMDb dataset
+max_words = 10000  # Consider only the top 10,000 most frequent words
+maxlen = 200  # Maximum sequence length
+(X_train, y_train), (X_test, y_test) = imdb.load_data(num_words=max_words)
+
+
+
+# Pad sequences to ensure uniform length
+max_length = 200
+X_train = pad_sequences(X_train, maxlen=maxlen)
+X_test = pad_sequences(X_test, maxlen=maxlen)
+
+
+
+
+# Define the LSTM model
+embedding_size = 128
+model = Sequential([
+    Embedding(input_dim=max_words, output_dim=embedding_size, input_length=max_length),
+    SpatialDropout1D(0.2),
+    LSTM(100),
+    Dense(1, activation='sigmoid')
+])
+
+
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+
+
+# Train the model
+batch_size = 64
+epochs = 5
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test), verbose=2)
+
+
+
+# Evaluate the model on test data
+loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
+
+
+# Make predictions on the test data
+predictions = model.predict(X_test)
+
+
+# Convert predictions to class labels
+predicted_labels = np.round(predictions).flatten().astype(int)
+
+
+
+# Print the first 10 predictions along with the corresponding true labels
+print("Predicted Labels:", predicted_labels[:10])
+print("True Labels:", y_test[:10])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# MNSIT
+
+
+import numpy as np
+from tensorflow.keras.datasets import fashion_mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.utils import to_categorical
+
+
+
+# Load the Fashion MNIST dataset
+(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+
+
+
+# Reshape and normalize the data
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1).astype('float32') / 255
+X_test = X_test.reshape(X_test.shape[0], 28, 28, 1).astype('float32') / 255
+
+
+
+# One-hot encode the target labels
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+
+
+# Define the CNN model
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    MaxPooling2D((2, 2)),
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dropout(0.5),
+    Dense(10, activation='softmax')  # Output layer with 10 neurons for 10 categories
+])
+
+
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+
+# Train the model
+batch_size = 128
+epochs = 10
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
+
+
+
+# Evaluate the model on test data
+loss, accuracy = model.evaluate(X_test, y_test)
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
+
+
+# Make predictions on the test data
+predictions = model.predict(X_test)
+
+
+
+# Convert predictions from one-hot encoded format to class labels
+predicted_labels = np.argmax(predictions, axis=1)
+
+
+
+# Convert true labels from one-hot encoded format to class labels
+true_labels = np.argmax(y_test, axis=1)
+
+
+
+# Print the predicted and true labels for the first 10 samples
+for i in range(10):
+    print("Sample", i+1)
+    print("Predicted Label:", predicted_labels[i])
+    print("True Label:", true_labels[i])
+    print()
+
+
+#model.fit(x_train,y_train, epochs=10)
+#test_loss,test_acc=model.evaluate(test_images, test_labels)
+#print('accuracy', test_acc)
+#prediction=model.predict(test_images)
+#prediction_labels=np.argmax(prediction,axis=1)
+
+
+#nums_rows=5
+#nums_cols=5
+#nums_images = nums_rows*nums_cols
+#plt.figure(figsize=(2*2*nums_cols, 2*nums_rows))
+#for i in range(nums_images):
+ # plt.subplot(nums_rows, 2*nums_cols, 2*i+1)
+  #plt.imshow(test_images[i], cmap='gray')
+ # plt.axis('off')
+ # plt.subplot(nums_rows,2*nums_cols, 2*i+2)
+ # plt.bar(range(10), prediction[i])
+ # plt.xticks(range(10))
+ # plt.ylim([0,1])
+ # plt.tight_layout()
+ # plt.title(f"prediction layout : {prediction_labels[i]}")
+ # plt.show()
