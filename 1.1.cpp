@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iomanip>
 #include <omp.h>
+#include <bits/stdc++.h>
 using namespace std;
 using namespace std::chrono;
 
@@ -21,31 +22,38 @@ class Node{
 
 
 
-// Parallel DFS on a binary tree
-void parallelDFS(Node* node) {
-
-    
-
-    if (node == nullptr)
+// Parallel BFS on a binary tree
+void parallelBFS(Node* root) {
+    if (root == nullptr)
         return;
 
-    std::cout << node->key << " ";
+    queue<Node*> q;
+    q.push(root);
 
-    #pragma omp parallel sections
-    {
-        #pragma omp section
+    while (!q.empty()) {
+        #pragma omp parallel
         {
-            parallelDFS(node->left);
-        }
+            #pragma omp single nowait
+            {
+                while (!q.empty()) {
+                    Node* current = q.front();
+                    q.pop();
+                    cout << current->key << " ";
 
-        #pragma omp section
-        {
-            parallelDFS(node->right);
+                    if (current->left != nullptr)
+                        q.push(current->left);
+
+                    if (current->right != nullptr)
+                        q.push(current->right);
+                }
+            }
         }
     }
+} 
 
-    
-}
+
+
+
 
 
 int main() {
@@ -58,7 +66,7 @@ int main() {
 
     std::cout << "Parallel BFS traversal: ";
     auto start = high_resolution_clock::now();
-    parallelDFS(root);
+    parallelBFS(root);
     std::cout << std::endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<nanoseconds>(stop - start).count() / 1e9;
